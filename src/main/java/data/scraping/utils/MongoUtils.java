@@ -1,6 +1,9 @@
 package data.scraping.utils;
 
 
+import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
+import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -12,6 +15,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.PojoCodecProvider;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -30,7 +35,22 @@ public class MongoUtils {
 	private static final String URL_BASE = "https://investigacion.us.es/sisius/sis_dep.php?id_dpto=91";
 	private static List<org.bson.Document> json_array = new ArrayList<org.bson.Document>();
 
+	private static final String MONGO_DB = "mongodb://manuel:manuel@ds255455.mlab.com:55455/si1718-mha-projects";
+	private static final String MONGO_CL = "projects";
 
+	
+	public static MongoDatabase database= null; 
+	
+	public static void initialize() {
+		CodecRegistry pojoCodecRegistry = fromRegistries(MongoClient.getDefaultCodecRegistry(),
+                fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+		
+		MongoClientURI uri = new MongoClientURI(MONGO_DB);
+		@SuppressWarnings("resource")
+		MongoClient mongoClient = new MongoClient(uri);
+		database = mongoClient.getDatabase(uri.getDatabase()).withCodecRegistry(pojoCodecRegistry);
+	}
+	
 	public static void updateProjects() throws MalformedURLException, IOException {
 		String projectURL ="";
 		String projectURL2 ="";
@@ -127,11 +147,10 @@ public class MongoUtils {
 			
 			}
 		}
-		MongoClientURI uri  = new MongoClientURI("mongodb://manuel:manuel@ds255455.mlab.com:55455/si1718-mha-projects");
-	    MongoClient client = new MongoClient(uri);
-	    MongoDatabase db = client.getDatabase(uri.getDatabase());
 
-	    MongoCollection<org.bson.Document> col = db.getCollection("projects");
+
+	    MongoCollection<org.bson.Document> col = database.getCollection(MONGO_CL, org.bson.Document.class);
+
 	    MongoCursor<org.bson.Document> cursor = col.find().iterator();
 	    while (cursor.hasNext()) {
 	    	org.bson.Document project = cursor.next();
@@ -139,7 +158,7 @@ public class MongoUtils {
         }
 	    col.insertMany(json_array);
 
-	 	client.close();
+	 	cursor.close();
 		
 		
 	}

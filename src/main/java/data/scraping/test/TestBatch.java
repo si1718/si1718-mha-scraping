@@ -31,7 +31,7 @@ public class TestBatch {
 	}
 	
 	public static void main(String... args) {
-		//MongoUtils.initialize();
+		MongoUtils.initialize();
 		new TestBatch().updateProjects();
 	}
 }
